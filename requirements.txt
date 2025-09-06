@@ -1,6 +1,7 @@
-pdfplumber
-langchain_ollama
-langchain
-ChatOllama
-tqdm
+langchain ollama
 langchain-google-genai
+langchain_openai
+python-dotenv
+pdfplumber
+langchain
+tqdm

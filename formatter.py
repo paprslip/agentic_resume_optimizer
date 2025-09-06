@@ -1,6 +1,5 @@
-from langchain_ollama import ChatOllama
 from langchain.prompts import PromptTemplate
-from models import gemma3, llama3p2, llama3p1, deepseek_r1
+from models import gemma3, llama3p2, llama3p1, deepseek_r1, gemini
 from utils import load
 from rewriter import rewriter
 from tqdm import tqdm
@@ -10,13 +9,18 @@ import re
 import os
 
 
-async def formatter(resumes, template, llm: ChatOllama, batch_size: int = 1):
+async def formatter(payload: dict, template: str, llm, batch_size: int = 1):
     
+    resumes = [payload[key]["rewritten_resume"] for key in payload if key != "resume"]
+
     sys_prompt = PromptTemplate(
         input_variables=["resume", "template"],
-        template="""You are a resume formatting expert. Given the resume content and another peron's LaTeX resume as a template, format the resume according to the template.
+        template="""You are a resume formatting expert.
+        You have been provided an applicant's resume and a John Doe resume to use as a LaTeX template.
+        Create a resume that uses the applicant's information but follows the structure, style, and formatting of the provided template.
+        Keep the length of the resume to one page by summarizing or removing less relevant content.
         Only return the resume, without any thoughts or description.
-        Return the resume in LaTeX format.
+        Return the resume in LaTeX format without any code block or markdown formatting.
         Here is the resume:
         {resume}
         
@@ -34,35 +38,34 @@ async def formatter(resumes, template, llm: ChatOllama, batch_size: int = 1):
         batch_responses = await llm.abatch(batch_jobs)
         responses.extend(batch_responses)
 
-    response_txt = [r.content for r in responses]
-    return response_txt
+    #payload["rewritten_resumes"] = [r.content for r in responses]
+    for key in payload:
+        if key != "resume":
+            payload[key]["rewritten_resume"] = responses[list(payload.keys()).index(key)-1].content
+
+    return payload
 
 
 def format_rewriter(response):
-    #application = list(response[0])
-    #resume = response[1].replace('\\\\', '\\').replace('\\n', '\n')
-
-    #feature request: put name of applicant and job title in filename
-    #with open(application[0].replace(' ','_') + "_" + application[1].replace(' ','_') + ".tex", 'w', encoding="utf-8") as file:
     with open("rewritten_resume.tex", 'w', encoding="utf-8") as file:
         for i in range(len(response)):
             file.write(response[i])
 
 
-if __name__ == "__main__":
+async def run():
     print("###############################################")
     print("Formatter Tester")
     print("###############################################")
     start_time = time.time()
-    loaded_resumes = [load("terrence.json")]
-    #print(type(loaded_resume))
+    loaded_resume = load("resume.json")
     loaded_postings = [load("sample_posting.pdf")]
     loaded_template = load("resume_template.tex")
-    output = asyncio.run(rewriter(resume=loaded_resumes, postings=loaded_postings, llm=llama3p1, batch_size=1))
-    #print(output)
-    output2 = asyncio.run(formatter(resumes=[output], template=loaded_template, llm=llama3p1, batch_size=1))
-    #print(output)
-    print(output2)
+    output = await rewriter(resume=loaded_resume, postings=loaded_postings, llm=gemini, batch_size=1)
+    output2 = await formatter(resumes=[output], template=loaded_template, llm=gemini, batch_size=1)
     test = format_rewriter(output2)
     end_time = time.time()
     print(f"Total time taken: {end_time - start_time:.2f} seconds")
+
+
+if __name__ == "__main__":
+    asyncio.run(run())

@@ -1,6 +1,5 @@
-from langchain_ollama import ChatOllama
 from langchain.prompts import PromptTemplate
-from models import gemma3, llama3p2, llama3p1, deepseek_r1
+from models import gemma3, llama3p2, llama3p1, deepseek_r1, gemini
 from utils import load
 from tqdm import tqdm
 import asyncio
@@ -10,22 +9,26 @@ import os
 import json
 
 
-async def rewriter(resume, postings: list, llm: ChatOllama, batch_size: int = 1) -> list:
-    
+async def rewriter(payload: dict, llm, batch_size: int = 1) -> list:
+
+    resume = payload["resume"]
+    postings = [payload[key]["posting"] for key in payload if key != "resume"]
+
     sys_prompt = PromptTemplate(
-        input_variables=["resume", "posting"],
-        template="""You are an expert resume writer. Rewrite the resume to better match the job posting. 
-        Use the job posting to identify keywords and skills that should be highlighted in the resume. 
-        Ensure the rewritten resume is ATS friendly and uses a professional tone. 
-        Keep the formatting simple and clean, one page max. 
-        Only return the resume, without any thoughts or description.
-        Return the resume in latex format.
+        input_variables=["resume", "posting", "template"],
+        template="""You are an expert resume writer.
+        You have been provided a detailed file containing an applicant's background, skills, and experiences in JSON format.
+        You have also been provided a job posting that the applicant is interested in applying for.
+        Identify relevant points, discard irrelevant ones, and reframe the resume to best align with the job posting.
+        Return twithout any thoughts or description.
+        Return the resume in the same JSON format as the input without any code block or markdown formatting.
+        
         Here is the resume:
         {resume}
         
         Here is the job posting:
         {posting}
-        
+
         Rewritten Resume:"""
     )
 
@@ -37,8 +40,13 @@ async def rewriter(resume, postings: list, llm: ChatOllama, batch_size: int = 1)
         batch_responses = await llm.abatch(batch_jobs)
         responses.extend(batch_responses)
 
-    response_txt = [r.content for r in responses]
-    return response_txt
+    #response_txt = [r.content for r in responses]
+    #payload["rewritten_resumes"] = [r.content for r in responses]
+    for key in payload:
+        if key != "resume":
+            payload[key]["rewritten_resume"] = responses[list(payload.keys()).index(key)-1].content
+
+    return payload
 
 
 def format_rewriter(response):
@@ -47,22 +55,24 @@ def format_rewriter(response):
 
     #feature request: put name of applicant and job title in filename
     #with open(application[0].replace(' ','_') + "_" + application[1].replace(' ','_') + ".tex", 'w', encoding="utf-8") as file:
-    with open("rewritten_resume.tex", 'w', encoding="utf-8") as file:
+    with open("rewritten_resume.json", 'w', encoding="utf-8") as file:
         for i in range(len(response)):
             file.write(response[i])
 
 
-if __name__ == "__main__":
+async def run():
     print("###############################################")
     print("Rewriter Tester")
     print("###############################################")
     start_time = time.time()
-    loaded_resume = load("terrence.json")
-    #print(type(loaded_resume))
-    loaded_postings = [load("sample_posting.pdf")]
-    #loaded_template = load("resume_template.tex")
-    output = asyncio.run(rewriter(resume=loaded_resume, postings=loaded_postings, llm=llama3p1, batch_size=1))
-    print(output)
+    loaded_resume = load("resume.json")
+    loaded_postings = [load("postings/hardware_sample_posting.txt")]
+    output = await rewriter(resume=loaded_resume, postings=loaded_postings, llm=gemini, batch_size=1)
     test = format_rewriter(output)
     end_time = time.time()
     print(f"Total time taken: {end_time - start_time:.2f} seconds")
+
+
+if __name__ == "__main__":
+    asyncio.run(run())
+    
