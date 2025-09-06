@@ -1,0 +1,6 @@
+pdfplumber
+langchain_ollama
+langchain
+ChatOllama
+tqdm
+langchain-google-genai
