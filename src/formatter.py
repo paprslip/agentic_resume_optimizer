@@ -47,7 +47,7 @@ async def formatter(payload: dict, template: str, llm, batch_size: int = 1):
 
 
 def format_rewriter(response):
-    with open("rewritten_resume.tex", 'w', encoding="utf-8") as file:
+    with open("output/ewritten_resume.tex", 'w', encoding="utf-8") as file:
         for i in range(len(response)):
             file.write(response[i])
 
@@ -57,9 +57,9 @@ async def run():
     print("Formatter Tester")
     print("###############################################")
     start_time = time.time()
-    loaded_resume = load("resume.json")
-    loaded_postings = [load("sample_posting.pdf")]
-    loaded_template = load("resume_template.tex")
+    loaded_resume = load("data/resume.json")
+    loaded_postings = [load("data/postings/sample_posting.pdf")]
+    loaded_template = load("templates/resume_template.tex")
     output = await rewriter(resume=loaded_resume, postings=loaded_postings, llm=gemini, batch_size=1)
     output2 = await formatter(resumes=[output], template=loaded_template, llm=gemini, batch_size=1)
     test = format_rewriter(output2)

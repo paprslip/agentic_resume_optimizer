@@ -52,8 +52,8 @@ async def run():
     print("Preprocessor Tester")
     print("###############################################")
     start_time = time.time()
-    loaded_resume = load("resume.json")
-    loaded_postings = [load("postings/hardware_sample_posting.txt")]
+    loaded_resume = load("data/resume.json")
+    loaded_postings = [load("data/postings/hardware_sample_posting.txt")]
     output = await preprocessor(resume=loaded_resume, postings=loaded_postings, llm=gemini, batch_size=1)
     print(output)
     end_time = time.time()

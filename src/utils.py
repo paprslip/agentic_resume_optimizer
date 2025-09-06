@@ -27,6 +27,6 @@ if __name__ == "__main__":
     print("###############################################")
     print("Loader Tester")
     print("###############################################")
-    content = load("Resume202410080333.pdf")
+    content = load("data/resume.json")
     print(content)
     print(f"Total characters loaded: {len(content)}")

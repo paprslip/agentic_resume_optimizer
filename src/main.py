@@ -12,14 +12,14 @@ import shutil
 
 async def main():
 
-    master_resume = load("resume.json")
+    master_resume = load("data/resume.json")
 
-    loaded_postings = [load(os.path.join("postings", file)) for file in os.listdir("postings")]
+    loaded_postings = [load(os.path.join("data/postings", file)) for file in os.listdir("data/postings")]
 
-    for filename in os.listdir("postings"):
-        shutil.move(f"postings/{filename}", f"processed/{filename}")
+    for filename in os.listdir("data/postings"):
+        shutil.move(f"data/postings/{filename}", f"data/processed/{filename}")
 
-    loaded_template = load("resume_template.tex")
+    loaded_template = load("templates/resume_template.tex")
 
     payload = await preprocessor(resume=master_resume, postings=loaded_postings, llm=gemini, batch_size=1)
 

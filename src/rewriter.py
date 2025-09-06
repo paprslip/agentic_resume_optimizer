@@ -55,7 +55,7 @@ def format_rewriter(response):
 
     #feature request: put name of applicant and job title in filename
     #with open(application[0].replace(' ','_') + "_" + application[1].replace(' ','_') + ".tex", 'w', encoding="utf-8") as file:
-    with open("rewritten_resume.json", 'w', encoding="utf-8") as file:
+    with open("output/rewritten_resume.json", 'w', encoding="utf-8") as file:
         for i in range(len(response)):
             file.write(response[i])
 
@@ -65,8 +65,8 @@ async def run():
     print("Rewriter Tester")
     print("###############################################")
     start_time = time.time()
-    loaded_resume = load("resume.json")
-    loaded_postings = [load("postings/hardware_sample_posting.txt")]
+    loaded_resume = load("data/resume.json")
+    loaded_postings = [load("data/postings/hardware_sample_posting.txt")]
     output = await rewriter(resume=loaded_resume, postings=loaded_postings, llm=gemini, batch_size=1)
     test = format_rewriter(output)
     end_time = time.time()
